@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车</title>
+    <style>
+        body {
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .shang {
+            width: 30%;
+            float: left;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .shang ul {
+            padding: 0;
+        }
+
+        .shang ul li {
+            list-style: none;
+            margin-bottom: 10px;
+        }
+
+        .clear {
+            clear: both;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1 style="text-align: center;">购物车</h1>
+        <!-- 商品列表 -->
+        <div class="shang" v-for="item in data" :key="item.id">
+            <ul>
+                <li>{{item.name}}</li>
+                <li><img :src="item.imgSrc" width="80" height="80" /></li>
+                <li>{{item.dan}}元</li>
+                <li><button @click="addg(item)" >加入购物车</button></li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+        <!-- 只有全选所有商品才会显示总价 -->
+        <table>
+            <thead>
+                <tr>
+                    <th>全选:<input type="checkbox" v-model="isCheckedAll" /></th>
+                    <th>序列号</th>
+                    <th>商品</th>
+                    <th>图片</th>
+                    <th>数量</th>
+                    <th>单价(元)</th>
+                    <th>金额(元)</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(item, index) in shopping" :key="item.id">
+                    <td><input type="checkbox" v-model="item.checked" /></td>
+                    <td>{{ index + 1 }}</td>
+                    <td>{{item.name}}</td>
+                    <td><img :src="item.imgSrc" width="80" height="80" /></td>
+                    <td>
+                        <button @click="update(item, -1)" >-</button>
+                        <span>{{item.total}}</span>
+                        <button @click="update(item, 1)">+</button>
+                    </td>
+                    <td>{{item.dan}}元</td>
+                    <td>{{(item.total * item.dan).toFixed(2)}}</td>
+                    <td><button @click="del(index)">删除</button></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6">总价：<span>{{ getSum }}元</span></td>
+                    <td>计件：{{ jSum }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <script src="../vue.js"></script>
+    <script>
+        new Vue({
+            el: "#app",
+            data: {
+                data: [
+                    // 商品列表
+                    {
+                        id: "001",
+                        name: "棉花糖",
+                        dan: 10.7,
+                        imgSrc: "https://tse2-mm.cn.bing.net/th/id/OIP-C.Fy36GQLrUsbYnX6c4rYxMAHaHa?w=193&h=193&c=7&r=0&o=5&dpr=1.7&pid=1.7",
+                        checked: false,
+                        num: 10//库存为10
+                    },
+                    {
+                        id: "002",
+                        name: "烤串",
+                        dan: 1.78,
+                        imgSrc: "https://tse3-mm.cn.bing.net/th/id/OIP-C.Y4BiakgGLw_YidjB68OZ5wHaE7?w=293&h=196&c=7&r=0&o=5&dpr=1.7&pid=1.7",
+                        checked: false,
+                        num: 10//库存为10
+                    },
+                    {
+                        id: "003",
+                        name: "西瓜",
+                        dan: 10.78,
+                        imgSrc: "https://tse1-mm.cn.bing.net/th/id/OIP-C.vE6_EGSct5ntWet8B2YsVAHaGP?w=202&h=180&c=7&r=0&o=5&dpr=1.7&pid=1.7",
+                        checked: false,
+                        num: 10//库存为10
+                    }
+                ],
+                // 加入购物车列表
+                shopping: []
+            },
+            methods: {
+                // 添加商品到购物车
+                addg(item) {
+                    let product = this.shopping.find(p => p.id === item.id);
+                    if (product) {
+                        if (item.num > 0) {
+                            product.total++;
+                            item.num--;
+                        }
+                    } else {
+                        if (item.num > 0) {
+                            // 
+                            this.shopping.push({ ...item, total: 1, checked: false });
+                            item.num--;
+                        }
+                    }
+                },
+                // 更新商品数量
+                update(item, amount) {
+                    let orItem = this.data.find(p => p.id === item.id);
+                    if (item.total + amount >= 0 && orItem.num - amount >= 0) {
+                        item.total += amount;
+                        orItem.num -= amount;
+                    }
+                },
+                // 删除商品
+                del(index) {
+                    let item = this.shopping[index];
+                    let orItem = this.data.find(p => p.id === item.id);
+                    orItem.num += item.total;
+                    this.shopping.splice(index, 1);
+                }
+            },
+            // 计算总价和计件
+            computed: {
+                // 计算总价
+                getSum() {
+                    return this.shopping.reduce((sum, item) => {
+                        if (item.checked) {
+                            return sum + item.total * item.dan;
+                        } else {
+                            return sum;
+                        }
+                    }, 0).toFixed(2);//保留两位小数
+                },
+                // 计算数量
+                jSum() {
+                    return this.shopping.reduce((total, item) => {
+                        if (item.checked) {
+                            return total + item.total;
+                        } else {
+                            return total;
+                        }
+                    }, 0);
+                },
+                // 全选
+                isCheckedAll: {
+                    get() {
+                        return this.shopping.every(item => item.checked);
+                    },
+                    set(value) {
+                        this.shopping.forEach(item => item.checked = value);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
